@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="사진과 글로 만드는 작은 온라인 책자">
+  <title>나의 작은 책자</title>
+  <style>
+    :root {
+      --paper: #fffdf8;
+      --ink: #292722;
+      --muted: #817d73;
+      --accent: #9b7957;
+      --line: #e9e2d7;
+      --bg: #eeeae3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: "Noto Serif KR", "Batang", Georgia, serif;
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 5; display: flex;
+      justify-content: space-between; align-items: center; gap: 12px;
+      padding: 12px 5vw; background: rgba(255,253,248,.94);
+      border-bottom: 1px solid var(--line); backdrop-filter: blur(8px);
+      font-family: Arial, sans-serif;
+    }
+    .brand { font-size: 14px; letter-spacing: .12em; color: var(--muted); }
+    .tools { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      border: 1px solid var(--line); background: white; color: var(--ink);
+      border-radius: 999px; padding: 8px 14px; cursor: pointer; font-size: 13px;
+    }
+    button.primary { background: var(--ink); color: white; border-color: var(--ink); }
+    button:disabled { opacity: .35; cursor: not-allowed; }
+    .book-wrap { min-height: calc(100vh - 55px); display: grid; place-items: center; padding: 36px 16px 24px; }
+    .book {
+      width: min(900px, 94vw); min-height: 650px; background: var(--paper);
+      box-shadow: 0 18px 55px rgba(49,40,28,.13); position: relative;
+      display: grid; grid-template-columns: 1fr 1fr;
+    }
+    .book::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: #e7dfd3; }
+    .page { padding: clamp(24px, 5vw, 58px); min-width: 0; display: flex; flex-direction: column; }
+    .page-no { color: #aaa294; font: 11px Arial, sans-serif; letter-spacing: .15em; margin-bottom: 22px; }
+    .eyebrow { color: var(--accent); font: 11px Arial, sans-serif; letter-spacing: .2em; text-transform: uppercase; margin: 0 0 14px; }
+    h1, h2 { font-weight: 400; line-height: 1.45; margin: 0 0 20px; }
+    h1 { font-size: clamp(27px, 4vw, 42px); }
+    h2 { font-size: clamp(21px, 3vw, 29px); }
+    .photo {
+      width: 100%; aspect-ratio: 4 / 5; object-fit: cover; background: #eee8de;
+      display: block; margin: 6px 0 20px;
+    }
+    .photo.empty { object-fit: contain; padding: 22px; color: #a49b8e; }
+    .body-copy {
+      white-space: pre-wrap; font-size: 15px; line-height: 2.05; color: #514d45;
+      min-height: 120px;
+    }
+    [contenteditable="true"] { outline: none; border-radius: 3px; }
+    [contenteditable="true"]:focus { box-shadow: 0 0 0 2px #d9c8b4; }
+    .caption { color: var(--muted); font-size: 12px; line-height: 1.7; margin-top: auto; padding-top: 22px; }
+    .page-controls { display: flex; justify-content: center; align-items: center; gap: 16px; padding: 0 0 28px; font: 13px Arial, sans-serif; color: var(--muted); }
+    .hint { text-align: center; color: var(--muted); font: 12px/1.8 Arial, sans-serif; padding: 0 16px 28px; }
+    .edit-only { display: inline-flex; }
+    body.readonly .edit-only { display: none; }
+    .upload { display: none; }
+    @media (max-width: 650px) {
+      .book { grid-template-columns: 1fr; min-height: 0; }
+      .book::before { display: none; }
+      .page { padding: 30px 26px; min-height: 520px; }
+      .page + .page { border-top: 1px solid var(--line); }
+      .photo { aspect-ratio: 16 / 10; }
+      .topbar { padding: 10px 4vw; }
+      .brand { font-size: 11px; }
+      button { padding: 7px 10px; font-size: 12px; }
+    }
+    @media print {
+      body { background: white; }
+      .topbar, .page-controls, .hint { display: none !important; }
+      .book-wrap { padding: 0; display: block; }
+      .book { width: 100%; box-shadow: none; break-after: page; }
+      .page { min-height: 95vh; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">MY LITTLE BOOK · 작은 온라인 책자</div>
+    <div class="tools">
+      <button class="edit-only" id="addPage">＋ 페이지 추가</button>
+      <button class="edit-only" id="imageButton">사진 넣기</button>
+      <button id="editToggle" class="primary">편집 완료</button>
+      <button id="printButton">인쇄 / PDF</button>
+      <input class="upload" id="imageInput" type="file" accept="image/*">
+    </div>
+  </header>
+
+  <main class="book-wrap">
+    <section class="book" id="book" aria-label="책자 페이지">
+      <article class="page">
+        <div class="page-no">01 / COVER</div>
+        <p class="eyebrow" contenteditable="true">MY STORY · 2026</p>
+        <h1 contenteditable="true">자연과 함께하는 작은 이야기</h1>
+        <img class="photo" src="https://files.idyllic.app/files/static/82935?optimizer=image&amp;width=640" alt="햇살이 비치는 커다란 나무">
+        <p class="body-copy" contenteditable="true">나무는 서두르지 않습니다. 계절이 바뀌는 동안 묵묵히 자리를 지키며 조금씩 자라납니다. 우리 삶도 나무처럼 천천히 성장하는 시간이 필요합니다.</p>
+        <p class="caption" contenteditable="true">나무가 전하는 이야기</p>
+      </article>
+      <article class="page">
+        <div class="page-no">02 / STORY</div>
+        <p class="eyebrow" contenteditable="true">CHAPTER 01</p>
+        <h2 contenteditable="true">작은 행복을 주는 친구</h2>
+        <img class="photo" src="https://www.kleinmetall.de/media/32/b1/26/1658849955/AdobeStock_313692438.jpeg?ts=1666085586" alt="따뜻한 햇살 아래 앉아 있는 골든 리트리버">
+        <p class="body-copy" contenteditable="true">강아지는 특별한 말을 하지 않아도 우리에게 큰 행복을 줍니다. 반가운 눈빛과 꼬리 흔드는 모습 하나만으로도 하루의 피로가 사라집니다. 함께하는 순간이 소중한 추억이 됩니다.</p>
+        <p class="caption" contenteditable="true">작은 행복을 주는 친구</p>
+      </article>
+    </section>
+  </main>
+
+  <nav class="page-controls" aria-label="페이지 이동">
+    <button id="prev" aria-label="이전 페이지">← 이전</button>
+    <span id="pageStatus">1–2 페이지</span>
+    <button id="next" aria-label="다음 페이지">다음 →</button>
+  </nav>
+  <p class="hint">글자를 클릭하면 바로 수정할 수 있습니다. 사진을 넣으려면 사진 영역을 클릭하세요.<br>브라우저의 인쇄 기능에서 ‘PDF로 저장’을 선택하면 책자를 PDF로 보관할 수 있습니다.</p>
+
+  <script>
+    const book = document.getElementById('book');
+    const imageInput = document.getElementById('imageInput');
+    let selectedPhoto = null;
+    let currentPage = 0;
+    const pagesPerView = () => window.innerWidth <= 650 ? 1 : 2;
+
+    function updateNavigation() {
+      const pages = [...book.querySelectorAll('.page')];
+      const per = pagesPerView();
+      const max = Math.max(0, pages.length - per);
+      currentPage = Math.min(currentPage, max);
+      if (per === 1) {
+        pages.forEach((p, i) => p.style.display = i === currentPage ? 'flex' : 'none');
+        document.getElementById('pageStatus').textContent = `${currentPage + 1} / ${pages.length} 페이지`;
+      } else {
+        pages.forEach(p => p.style.display = 'flex');
+        document.getElementById('pageStatus').textContent = `1–${pages.length} 페이지`;
+      }
+      document.getElementById('prev').disabled = currentPage <= 0;
+      document.getElementById('next').disabled = currentPage >= max;
+    }
+    document.getElementById('prev').addEventListener('click', () => { currentPage--; updateNavigation(); });
+    document.getElementById('next').addEventListener('click', () => { currentPage++; updateNavigation(); });
+    window.addEventListener('resize', updateNavigation);
+
+    document.getElementById('addPage').addEventListener('click', () => {
+      const n = book.querySelectorAll('.page').length + 1;
+      const page = document.createElement('article');
+      page.className = 'page';
+      page.innerHTML = `
+        <div class="page-no">${String(n).padStart(2,'0')} / STORY</div>
+        <p class="eyebrow" contenteditable="true">CHAPTER ${String(n-1).padStart(2,'0')}</p>
+        <h2 contenteditable="true">새로운 이야기</h2>
+        <img class="photo empty" src="" alt="본문 사진 자리" data-empty="true">
+        <p class="body-copy" contenteditable="true">이곳에 글을 입력하세요.</p>
+        <p class="caption" contenteditable="true">사진 설명</p>`;
+      book.appendChild(page);
+      currentPage = n - 1;
+      updateNavigation();
+    });
+
+    book.addEventListener('click', (event) => {
+      if (event.target.matches('.photo')) {
+        selectedPhoto = event.target;
+        imageInput.click();
+      }
+    });
+    document.getElementById('imageButton').addEventListener('click', () => {
+      selectedPhoto = book.querySelector('.page .photo');
+      imageInput.click();
+    });
+    imageInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file || !selectedPhoto) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        selectedPhoto.src = reader.result;
+        selectedPhoto.classList.remove('empty');
+        selectedPhoto.removeAttribute('data-empty');
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    });
+    document.getElementById('editToggle').addEventListener('click', (event) => {
+      const readOnly = document.body.classList.toggle('readonly');
+      document.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = String(!readOnly));
+      event.target.textContent = readOnly ? '편집하기' : '편집 완료';
+      event.target.classList.toggle('primary', !readOnly);
+    });
+    document.getElementById('printButton').addEventListener('click', () => window.print());
+    updateNavigation();
+  </script>
+</body>
+</html>
